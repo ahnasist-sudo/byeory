@@ -43,11 +43,8 @@ if (settingsCount.count === 0) {
   insertSetting.run("about_text", "사회적협동조합 벼리는 지역사회의 복지 증진과 소외계층 지원을 위해 설립된 사회적협동조합입니다.");
   insertSetting.run("admin_password", "admin1234");
 } else {
-  // Ensure admin_password exists
-  const hasPassword = db.prepare("SELECT COUNT(*) as count FROM settings WHERE key = 'admin_password'").get() as { count: number };
-  if (hasPassword.count === 0) {
-    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run("admin_password", "admin1234");
-  }
+  // Ensure admin_password exists and is set to admin1234
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("admin_password", "admin1234");
   // Update existing about_text if it has the old value
   const currentAbout = db.prepare("SELECT value FROM settings WHERE key = 'about_text'").get() as { value: string };
   if (currentAbout && currentAbout.value.includes("사회복지법인")) {
