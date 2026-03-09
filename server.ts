@@ -32,6 +32,15 @@ db.exec(`
     description TEXT,
     keywords TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS inquiries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    contact TEXT NOT NULL,
+    message TEXT NOT NULL,
+    status TEXT DEFAULT 'pending',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Seed initial settings if empty
@@ -43,6 +52,12 @@ if (settingsCount.count === 0) {
   insertSetting.run("bg_color", "#000000");
   insertSetting.run("about_text", "사회적협동조합 벼리는 지역사회의 복지 증진과 소외계층 지원을 위해 설립된 사회적협동조합입니다.");
   insertSetting.run("admin_password", process.env.ADMIN_PASSWORD || "admin");
+  insertSetting.run("contact_address", "서울특별시 어느구 어느동 123-45");
+  insertSetting.run("contact_phone", "02-1234-5678");
+  insertSetting.run("contact_email", "contact@byeori.coop");
+  insertSetting.run("social_instagram", "#");
+  insertSetting.run("social_facebook", "#");
+  insertSetting.run("social_kakao", "#");
 } else {
   // Ensure admin_password exists (use ENV or default if not set)
   // Force update to 'admin' as requested by user for immediate effect
@@ -146,6 +161,28 @@ async function startServer() {
   app.post("/api/seo", adminAuth, (req, res) => {
     const { page, title, description, keywords } = req.body;
     db.prepare("INSERT OR REPLACE INTO seo (page, title, description, keywords) VALUES (?, ?, ?, ?)").run(page, title, description, keywords);
+    res.json({ success: true });
+  });
+
+  app.get("/api/inquiries", adminAuth, (req, res) => {
+    const inquiries = db.prepare("SELECT * FROM inquiries ORDER BY created_at DESC").all();
+    res.json(inquiries);
+  });
+
+  app.post("/api/inquiries", (req, res) => {
+    const { name, contact, message } = req.body;
+    db.prepare("INSERT INTO inquiries (name, contact, message) VALUES (?, ?, ?)").run(name, contact, message);
+    res.json({ success: true });
+  });
+
+  app.patch("/api/inquiries/:id", adminAuth, (req, res) => {
+    const { status } = req.body;
+    db.prepare("UPDATE inquiries SET status = ? WHERE id = ?").run(status, req.params.id);
+    res.json({ success: true });
+  });
+
+  app.delete("/api/inquiries/:id", adminAuth, (req, res) => {
+    db.prepare("DELETE FROM inquiries WHERE id = ?").run(req.params.id);
     res.json({ success: true });
   });
 

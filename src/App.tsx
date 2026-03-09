@@ -27,7 +27,7 @@ export default function App() {
             <Route path="/admin/*" element={<AdminDashboard />} />
           </Routes>
         </main>
-        <Footer siteName={settings.site_name} />
+        <Footer settings={settings} />
       </div>
     </Router>
   );
