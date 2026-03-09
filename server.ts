@@ -42,13 +42,11 @@ if (settingsCount.count === 0) {
   insertSetting.run("primary_color", "#FACC15"); // Yellow-400
   insertSetting.run("bg_color", "#000000");
   insertSetting.run("about_text", "사회적협동조합 벼리는 지역사회의 복지 증진과 소외계층 지원을 위해 설립된 사회적협동조합입니다.");
-  insertSetting.run("admin_password", process.env.ADMIN_PASSWORD || "admin1234");
+  insertSetting.run("admin_password", process.env.ADMIN_PASSWORD || "admin");
 } else {
   // Ensure admin_password exists (use ENV or default if not set)
-  const hasPassword = db.prepare("SELECT COUNT(*) as count FROM settings WHERE key = 'admin_password'").get() as { count: number };
-  if (hasPassword.count === 0) {
-    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run("admin_password", process.env.ADMIN_PASSWORD || "admin1234");
-  }
+  // Force update to 'admin' as requested by user for immediate effect
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("admin_password", process.env.ADMIN_PASSWORD || "admin");
   // Update existing about_text if it has the old value
   const currentAbout = db.prepare("SELECT value FROM settings WHERE key = 'about_text'").get() as { value: string };
   if (currentAbout && currentAbout.value.includes("사회복지법인")) {
@@ -75,7 +73,7 @@ async function startServer() {
   const adminAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const token = req.headers["x-admin-token"];
     const adminPasswordRow = db.prepare("SELECT value FROM settings WHERE key = 'admin_password'").get() as { value: string } | undefined;
-    const adminPassword = adminPasswordRow?.value || process.env.ADMIN_PASSWORD || "admin1234";
+    const adminPassword = adminPasswordRow?.value || process.env.ADMIN_PASSWORD || "admin";
     
     // Simple token check: token should match password for this basic implementation
     if (token === adminPassword) {
@@ -89,7 +87,7 @@ async function startServer() {
   app.post("/api/login", (req, res) => {
     const { password } = req.body;
     const adminPasswordRow = db.prepare("SELECT value FROM settings WHERE key = 'admin_password'").get() as { value: string } | undefined;
-    const adminPassword = adminPasswordRow?.value || process.env.ADMIN_PASSWORD || "admin1234";
+    const adminPassword = adminPasswordRow?.value || process.env.ADMIN_PASSWORD || "admin";
     
     if (password === adminPassword) {
       res.json({ token: adminPassword });
