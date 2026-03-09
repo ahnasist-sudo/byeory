@@ -62,7 +62,6 @@ if (postsCount.count === 0) {
   const insertPost = db.prepare("INSERT INTO posts (title, content, category, image_url) VALUES (?, ?, ?, ?)");
   insertPost.run("2024년 정기 총회 안내", "올해 정기 총회가 4월 15일에 개최됩니다. 많은 참여 부탁드립니다.", "공지사항", "https://picsum.photos/seed/meeting/800/400");
   insertPost.run("지역 어르신 도시락 배달 봉사", "지난 주말, 단원들과 함께 지역 어르신들께 따뜻한 도시락을 전달했습니다.", "활동내역", "https://picsum.photos/seed/volunteer/800/400");
-  insertPost.run("신규 회원 모집 안내", "벼리와 함께할 새로운 가족을 찾습니다. 사회복지에 관심 있는 분들의 많은 지원 바랍니다.", "새소식", "https://picsum.photos/seed/join/800/400");
 }
 
 async function startServer() {

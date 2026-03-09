@@ -172,10 +172,7 @@ export default function Home({ settings }: HomeProps) {
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <button className="px-10 py-5 bg-black text-white rounded-full font-bold text-lg hover:scale-105 transition-transform">
-              후원하기
-            </button>
-            <button className="px-10 py-5 border-2 border-black/20 text-black rounded-full font-bold text-lg hover:bg-black/5 transition-all">
-              봉사 신청
+              문의하기
             </button>
           </div>
         </div>

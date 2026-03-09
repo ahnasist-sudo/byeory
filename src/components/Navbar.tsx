@@ -39,13 +39,6 @@ export default function Navbar({ siteName = "사회적협동조합 벼리", prim
                 {link.name}
               </a>
             ))}
-            <Link
-              to="/admin"
-              className="p-2 rounded-full hover:bg-white/10 transition-colors"
-              title="관리자 대시보드"
-            >
-              <Settings size={20} className="text-white/50 hover:text-white" />
-            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -80,14 +73,6 @@ export default function Navbar({ siteName = "사회적협동조합 벼리", prim
                   {link.name}
                 </a>
               ))}
-              <Link
-                to="/admin"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center space-x-2 px-3 py-4 text-base font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-lg"
-              >
-                <Settings size={20} />
-                <span>관리자 설정</span>
-              </Link>
             </div>
           </motion.div>
         )}
