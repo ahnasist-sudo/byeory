@@ -75,8 +75,12 @@ if (settingsCount.count === 0) {
 const postsCount = db.prepare("SELECT COUNT(*) as count FROM posts").get() as { count: number };
 if (postsCount.count === 0) {
   const insertPost = db.prepare("INSERT INTO posts (title, content, category, image_url) VALUES (?, ?, ?, ?)");
-  insertPost.run("2024년 정기 총회 안내", "올해 정기 총회가 4월 15일에 개최됩니다. 많은 참여 부탁드립니다.", "공지사항", "https://picsum.photos/seed/meeting/800/400");
-  insertPost.run("지역 어르신 도시락 배달 봉사", "지난 주말, 단원들과 함께 지역 어르신들께 따뜻한 도시락을 전달했습니다.", "활동내역", "https://picsum.photos/seed/volunteer/800/400");
+  insertPost.run("2024년 정기 총회 안내", "올해 정기 총회가 4월 15일에 개최됩니다. 많은 참여 부탁드립니다.", "공지사항", "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800");
+  insertPost.run("지역 어르신 도시락 배달 봉사", "지난 주말, 단원들과 함께 지역 어르신들께 따뜻한 도시락을 전달했습니다.", "활동내역", "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800");
+} else {
+  // Update existing seed images to reliable photos
+  db.prepare("UPDATE posts SET image_url = ? WHERE image_url LIKE '%images.unsplash.com/photo-1577415124269-fc1140a69e91%'").run("https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800");
+  db.prepare("UPDATE posts SET image_url = ? WHERE image_url LIKE '%images.unsplash.com/photo-1616671285410-9a30488f2441%'").run("https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800");
 }
 
 async function startServer() {
@@ -161,28 +165,6 @@ async function startServer() {
   app.post("/api/seo", adminAuth, (req, res) => {
     const { page, title, description, keywords } = req.body;
     db.prepare("INSERT OR REPLACE INTO seo (page, title, description, keywords) VALUES (?, ?, ?, ?)").run(page, title, description, keywords);
-    res.json({ success: true });
-  });
-
-  app.get("/api/inquiries", adminAuth, (req, res) => {
-    const inquiries = db.prepare("SELECT * FROM inquiries ORDER BY created_at DESC").all();
-    res.json(inquiries);
-  });
-
-  app.post("/api/inquiries", (req, res) => {
-    const { name, contact, message } = req.body;
-    db.prepare("INSERT INTO inquiries (name, contact, message) VALUES (?, ?, ?)").run(name, contact, message);
-    res.json({ success: true });
-  });
-
-  app.patch("/api/inquiries/:id", adminAuth, (req, res) => {
-    const { status } = req.body;
-    db.prepare("UPDATE inquiries SET status = ? WHERE id = ?").run(status, req.params.id);
-    res.json({ success: true });
-  });
-
-  app.delete("/api/inquiries/:id", adminAuth, (req, res) => {
-    db.prepare("DELETE FROM inquiries WHERE id = ?").run(req.params.id);
     res.json({ success: true });
   });
 

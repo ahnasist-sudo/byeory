@@ -134,7 +134,6 @@ export default function AdminDashboard() {
         <nav className="flex-grow p-4 space-y-2">
           <SidebarLink to="/admin" icon={LayoutDashboard} label="대시보드" exact />
           <SidebarLink to="/admin/posts" icon={FileText} label="게시글 관리" />
-          <SidebarLink to="/admin/inquiries" icon={MessageSquare} label="문의 내역" />
           <SidebarLink to="/admin/settings" icon={SettingsIcon} label="사이트 설정" />
           <SidebarLink to="/admin/seo" icon={Search} label="SEO 관리" />
         </nav>
@@ -159,7 +158,6 @@ export default function AdminDashboard() {
         <Routes>
           <Route path="/" element={<AdminHome />} />
           <Route path="/posts" element={<PostManagement />} />
-          <Route path="/inquiries" element={<InquiryManagement />} />
           <Route path="/settings" element={<SiteSettings />} />
           <Route path="/seo" element={<SEOManagement />} />
         </Routes>
@@ -191,13 +189,10 @@ function SidebarLink({ to, icon: Icon, label, exact = false }: any) {
 // --- Admin Sub-pages ---
 
 function AdminHome() {
-  const [stats, setStats] = useState({ posts: 0, inquiries: 0 });
+  const [stats, setStats] = useState({ posts: 0 });
 
   useEffect(() => {
-    fetch("/api/posts").then(res => res.json()).then(data => setStats(prev => ({ ...prev, posts: data.length })));
-    fetch("/api/inquiries", {
-      headers: { "x-admin-token": localStorage.getItem("admin_token") || "" }
-    }).then(res => res.json()).then(data => setStats(prev => ({ ...prev, inquiries: data.length })));
+    fetch("/api/posts").then(res => res.json()).then(data => setStats({ posts: data.length }));
   }, []);
 
   return (
@@ -218,19 +213,6 @@ function AdminHome() {
           <div>
             <div className="text-4xl font-bold">{stats.posts}</div>
             <div className="text-sm text-white/40">등록된 전체 게시글 수</div>
-          </div>
-        </div>
-
-        <div className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="p-3 bg-green-500/10 rounded-xl">
-              <MessageSquare className="text-green-500" />
-            </div>
-            <span className="text-xs font-bold text-white/20 uppercase tracking-widest">Total Inquiries</span>
-          </div>
-          <div>
-            <div className="text-4xl font-bold">{stats.inquiries}</div>
-            <div className="text-sm text-white/40">접수된 전체 문의 수</div>
           </div>
         </div>
       </div>
@@ -601,99 +583,6 @@ function SiteSettings() {
             </div>
           </div>
         </section>
-      </div>
-    </div>
-  );
-}
-
-function InquiryManagement() {
-  const [inquiries, setInquiries] = useState<any[]>([]);
-
-  const fetchInquiries = () => {
-    fetch("/api/inquiries", {
-      headers: { "x-admin-token": localStorage.getItem("admin_token") || "" }
-    }).then(res => res.json()).then(data => setInquiries(data));
-  };
-
-  useEffect(() => {
-    fetchInquiries();
-  }, []);
-
-  const handleStatusUpdate = async (id: number, status: string) => {
-    await fetch(`/api/inquiries/${id}`, {
-      method: "PATCH",
-      headers: { 
-        "Content-Type": "application/json",
-        "x-admin-token": localStorage.getItem("admin_token") || ""
-      },
-      body: JSON.stringify({ status }),
-    });
-    fetchInquiries();
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm("정말 삭제하시겠습니까?")) return;
-    await fetch(`/api/inquiries/${id}`, {
-      method: "DELETE",
-      headers: { "x-admin-token": localStorage.getItem("admin_token") || "" }
-    });
-    fetchInquiries();
-  };
-
-  return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight">문의 내역 확인</h1>
-        <p className="text-white/40 mt-1">웹사이트를 통해 접수된 문의 사항을 확인하고 관리합니다.</p>
-      </header>
-
-      <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="border-b border-white/10 bg-white/5">
-              <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-widest">이름</th>
-              <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-widest">연락처</th>
-              <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-widest">문의내용</th>
-              <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-widest">상태</th>
-              <th className="px-6 py-4 text-xs font-bold text-white/40 uppercase tracking-widest text-right">관리</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {inquiries.map((inquiry) => (
-              <tr key={inquiry.id} className="hover:bg-white/5 transition-colors group">
-                <td className="px-6 py-4 font-medium text-white">{inquiry.name}</td>
-                <td className="px-6 py-4 text-sm text-white/60">{inquiry.contact}</td>
-                <td className="px-6 py-4 text-sm text-white/60 max-w-xs truncate">{inquiry.message}</td>
-                <td className="px-6 py-4">
-                  <select 
-                    value={inquiry.status}
-                    onChange={(e) => handleStatusUpdate(inquiry.id, e.target.value)}
-                    className={cn(
-                      "text-xs px-2 py-1 rounded bg-black border border-white/10 focus:outline-none",
-                      inquiry.status === "pending" ? "text-yellow-400" : "text-green-400"
-                    )}
-                  >
-                    <option value="pending">대기중</option>
-                    <option value="completed">처리완료</option>
-                  </select>
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button 
-                    onClick={() => handleDelete(inquiry.id)}
-                    className="p-2 rounded-lg hover:bg-red-500/20 text-red-500 transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {inquiries.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-white/20">접수된 문의가 없습니다.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
       </div>
     </div>
   );
