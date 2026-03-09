@@ -41,7 +41,13 @@ if (settingsCount.count === 0) {
   insertSetting.run("primary_color", "#FACC15"); // Yellow-400
   insertSetting.run("bg_color", "#000000");
   insertSetting.run("about_text", "사회적협동조합 벼리는 지역사회의 복지 증진과 소외계층 지원을 위해 설립된 사회적협동조합입니다.");
+  insertSetting.run("admin_password", "admin1234");
 } else {
+  // Ensure admin_password exists
+  const hasPassword = db.prepare("SELECT COUNT(*) as count FROM settings WHERE key = 'admin_password'").get() as { count: number };
+  if (hasPassword.count === 0) {
+    db.prepare("INSERT INTO settings (key, value) VALUES (?, ?)").run("admin_password", "admin1234");
+  }
   // Update existing about_text if it has the old value
   const currentAbout = db.prepare("SELECT value FROM settings WHERE key = 'about_text'").get() as { value: string };
   if (currentAbout && currentAbout.value.includes("사회복지법인")) {
@@ -64,25 +70,49 @@ async function startServer() {
   const app = express();
   app.use(express.json());
 
+  // Auth Middleware
+  const adminAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const token = req.headers["x-admin-token"];
+    const password = db.prepare("SELECT value FROM settings WHERE key = 'admin_password'").get() as { value: string };
+    
+    // Simple token check: token should match password for this basic implementation
+    if (token === password.value) {
+      next();
+    } else {
+      res.status(401).json({ error: "Unauthorized" });
+    }
+  };
+
   // API Routes
+  app.post("/api/login", (req, res) => {
+    const { password } = req.body;
+    const adminPassword = db.prepare("SELECT value FROM settings WHERE key = 'admin_password'").get() as { value: string };
+    
+    if (password === adminPassword.value) {
+      res.json({ token: adminPassword.value });
+    } else {
+      res.status(401).json({ error: "Invalid password" });
+    }
+  });
+
   app.get("/api/posts", (req, res) => {
     const posts = db.prepare("SELECT * FROM posts ORDER BY created_at DESC").all();
     res.json(posts);
   });
 
-  app.post("/api/posts", (req, res) => {
+  app.post("/api/posts", adminAuth, (req, res) => {
     const { title, content, category, image_url } = req.body;
     const info = db.prepare("INSERT INTO posts (title, content, category, image_url) VALUES (?, ?, ?, ?)").run(title, content, category, image_url);
     res.json({ id: info.lastInsertRowid });
   });
 
-  app.put("/api/posts/:id", (req, res) => {
+  app.put("/api/posts/:id", adminAuth, (req, res) => {
     const { title, content, category, image_url } = req.body;
     db.prepare("UPDATE posts SET title = ?, content = ?, category = ?, image_url = ? WHERE id = ?").run(title, content, category, image_url, req.params.id);
     res.json({ success: true });
   });
 
-  app.delete("/api/posts/:id", (req, res) => {
+  app.delete("/api/posts/:id", adminAuth, (req, res) => {
     db.prepare("DELETE FROM posts WHERE id = ?").run(req.params.id);
     res.json({ success: true });
   });
@@ -96,7 +126,7 @@ async function startServer() {
     res.json(settingsMap);
   });
 
-  app.post("/api/settings", (req, res) => {
+  app.post("/api/settings", adminAuth, (req, res) => {
     const updates = req.body;
     const upsert = db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
     const transaction = db.transaction((data) => {
@@ -113,7 +143,7 @@ async function startServer() {
     res.json(seo);
   });
 
-  app.post("/api/seo", (req, res) => {
+  app.post("/api/seo", adminAuth, (req, res) => {
     const { page, title, description, keywords } = req.body;
     db.prepare("INSERT OR REPLACE INTO seo (page, title, description, keywords) VALUES (?, ?, ?, ?)").run(page, title, description, keywords);
     res.json({ success: true });

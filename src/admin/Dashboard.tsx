@@ -22,6 +22,98 @@ function cn(...inputs: ClassValue[]) {
 }
 
 export default function AdminDashboard() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("admin_token");
+    if (token) {
+      setIsAuthenticated(true);
+    }
+    setIsLoading(false);
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem("admin_token", data.token);
+        setIsAuthenticated(true);
+      } else {
+        setError("비밀번호가 올바르지 않습니다.");
+      }
+    } catch (err) {
+      setError("로그인 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("admin_token");
+    setIsAuthenticated(false);
+  };
+
+  if (isLoading) return null;
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md bg-white/5 border border-white/10 rounded-[2rem] p-8 md:p-12 space-y-8"
+        >
+          <div className="text-center space-y-2">
+            <div className="inline-flex p-4 bg-yellow-400 rounded-2xl mb-4">
+              <SettingsIcon size={32} className="text-black" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight text-white">관리자 로그인</h1>
+            <p className="text-white/40">계속하려면 비밀번호를 입력하세요.</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-white/40 uppercase tracking-widest">비밀번호</label>
+              <input 
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-black border border-white/10 rounded-xl px-4 py-4 focus:outline-none focus:border-yellow-400 transition-colors text-white"
+                placeholder="••••••••"
+              />
+            </div>
+
+            {error && (
+              <p className="text-red-500 text-sm font-medium text-center">{error}</p>
+            )}
+
+            <button 
+              type="submit"
+              className="w-full py-4 bg-yellow-400 text-black font-bold rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              로그인
+            </button>
+          </form>
+
+          <div className="text-center">
+            <Link to="/" className="text-sm text-white/30 hover:text-white transition-colors">
+              사이트로 돌아가기
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-[#0a0a0a] text-white">
       {/* Sidebar */}
@@ -42,9 +134,16 @@ export default function AdminDashboard() {
           <SidebarLink to="/admin/seo" icon={Search} label="SEO 관리" />
         </nav>
 
-        <div className="p-4 border-t border-white/10">
-          <Link to="/" className="flex items-center space-x-3 p-3 rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition-all">
+        <div className="p-4 border-t border-white/10 space-y-2">
+          <button 
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-3 p-3 rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition-all"
+          >
             <LogOut size={20} />
+            <span className="text-sm font-medium">로그아웃</span>
+          </button>
+          <Link to="/" className="flex items-center space-x-3 p-3 rounded-xl text-white/50 hover:text-white hover:bg-white/5 transition-all">
+            <ChevronRight size={20} />
             <span className="text-sm font-medium">사이트로 돌아가기</span>
           </Link>
         </div>
@@ -137,7 +236,10 @@ function PostManagement() {
 
     await fetch(url, {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "x-admin-token": localStorage.getItem("admin_token") || ""
+      },
       body: JSON.stringify(currentPost),
     });
 
@@ -148,7 +250,12 @@ function PostManagement() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("정말 삭제하시겠습니까?")) return;
-    await fetch(`/api/posts/${id}`, { method: "DELETE" });
+    await fetch(`/api/posts/${id}`, { 
+      method: "DELETE",
+      headers: {
+        "x-admin-token": localStorage.getItem("admin_token") || ""
+      }
+    });
     fetchPosts();
   };
 
@@ -320,7 +427,10 @@ function SiteSettings() {
     setIsSaving(true);
     await fetch("/api/settings", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "x-admin-token": localStorage.getItem("admin_token") || ""
+      },
       body: JSON.stringify(settings),
     });
     setIsSaving(false);
@@ -354,6 +464,16 @@ function SiteSettings() {
                 value={settings.site_name || ""}
                 onChange={e => setSettings({...settings, site_name: e.target.value})}
                 className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-400 transition-colors"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-white/40 uppercase tracking-widest">관리자 비밀번호</label>
+              <input 
+                type="password"
+                value={settings.admin_password || ""}
+                onChange={e => setSettings({...settings, admin_password: e.target.value})}
+                className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-400 transition-colors"
+                placeholder="새 비밀번호 입력"
               />
             </div>
           </div>
@@ -421,7 +541,10 @@ function SEOManagement() {
   const handleSave = async () => {
     await fetch("/api/seo", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "x-admin-token": localStorage.getItem("admin_token") || ""
+      },
       body: JSON.stringify(currentSeo),
     });
     alert("SEO 설정이 저장되었습니다.");

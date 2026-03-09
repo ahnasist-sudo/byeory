@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import { ArrowRight, Heart, Users, Globe } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import PostCard from "../components/PostCard";
 
 interface HomeProps {
@@ -79,34 +79,6 @@ export default function Home({ settings }: HomeProps) {
               조합 소개 보기
             </a>
           </motion.div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { icon: Heart, label: "지원 가구", value: "1,200+", color: "#EF4444" },
-            { icon: Users, label: "활동 단원", value: "450+", color: "#3B82F6" },
-            { icon: Globe, label: "협력 기관", value: "85+", color: "#10B981" },
-          ].map((stat, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="p-8 bg-white/5 border border-white/10 rounded-3xl text-center space-y-4"
-            >
-              <div className="inline-flex p-4 rounded-2xl bg-white/5">
-                <stat.icon size={32} style={{ color: stat.color }} />
-              </div>
-              <div>
-                <div className="text-4xl font-black text-white">{stat.value}</div>
-                <div className="text-sm text-white/40 uppercase tracking-widest font-bold">{stat.label}</div>
-              </div>
-            </motion.div>
-          ))}
         </div>
       </section>
 
