@@ -52,7 +52,7 @@ if (settingsCount.count === 0) {
   insertSetting.run("bg_color", "#000000");
   insertSetting.run("about_text", "사회적협동조합 벼리는 지역사회의 복지 증진과 소외계층 지원을 위해 설립된 사회적협동조합입니다.");
   insertSetting.run("admin_password", process.env.ADMIN_PASSWORD || "admin");
-  insertSetting.run("contact_address", "서울특별시 어느구 어느동 123-45");
+  insertSetting.run("contact_address", "전남 무안군 어딘가");
   insertSetting.run("contact_phone", "02-1234-5678");
   insertSetting.run("contact_email", "contact@byeori.coop");
   insertSetting.run("social_instagram", "#");
@@ -62,6 +62,8 @@ if (settingsCount.count === 0) {
   // Ensure admin_password exists (use ENV or default if not set)
   // Force update to 'admin' as requested by user for immediate effect
   db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("admin_password", process.env.ADMIN_PASSWORD || "admin");
+  // Update address as requested
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("contact_address", "전남 무안군 어딘가");
   // Update existing about_text if it has the old value
   const currentAbout = db.prepare("SELECT value FROM settings WHERE key = 'about_text'").get() as { value: string };
   if (currentAbout && currentAbout.value.includes("사회복지법인")) {
@@ -74,10 +76,24 @@ if (settingsCount.count === 0) {
 // Seed initial posts if empty
 const postsCount = db.prepare("SELECT COUNT(*) as count FROM posts").get() as { count: number };
 if (postsCount.count === 0) {
-  const insertPost = db.prepare("INSERT INTO posts (title, content, category, image_url) VALUES (?, ?, ?, ?)");
-  insertPost.run("2024년 정기 총회 안내", "올해 정기 총회가 4월 15일에 개최됩니다. 많은 참여 부탁드립니다.", "공지사항", "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800");
-  insertPost.run("지역 어르신 도시락 배달 봉사", "지난 주말, 단원들과 함께 지역 어르신들께 따뜻한 도시락을 전달했습니다.", "활동내역", "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800");
+  const insertPost = db.prepare("INSERT INTO posts (title, content, category, image_url, created_at) VALUES (?, ?, ?, ?, ?)");
+  insertPost.run("사회적협동조합 벼리 창립총회 개최", "2026년 3월 6일, 사회적협동조합 벼리의 창립총회가 성공적으로 개최되었습니다. 지역사회를 위한 따뜻한 첫걸음에 함께해주신 모든 분들께 감사드립니다.", "공지사항", "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800", "2026-03-06 10:00:00");
+  insertPost.run("지역 어르신 도시락 배달 봉사", "지난 주말, 단원들과 함께 지역 어르신들께 따뜻한 도시락을 전달했습니다.", "활동내역", "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800", "2024-03-20 14:00:00");
 } else {
+  // Delete 2024 meeting post if it exists
+  db.prepare("DELETE FROM posts WHERE title = '2024년 정기 총회 안내'").run();
+  
+  // Check if founding meeting post exists, if not add it
+  const foundingExists = db.prepare("SELECT COUNT(*) as count FROM posts WHERE title LIKE '%창립총회%'").get() as { count: number };
+  if (foundingExists.count === 0) {
+    db.prepare("INSERT INTO posts (title, content, category, image_url, created_at) VALUES (?, ?, ?, ?, ?)").run(
+      "사회적협동조합 벼리 창립총회 개최", 
+      "2026년 3월 6일, 사회적협동조합 벼리의 창립총회가 성공적으로 개최되었습니다. 지역사회를 위한 따뜻한 첫걸음에 함께해주신 모든 분들께 감사드립니다.", 
+      "공지사항", 
+      "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800",
+      "2026-03-06 10:00:00"
+    );
+  }
   // Update existing seed images to reliable photos
   db.prepare("UPDATE posts SET image_url = ? WHERE image_url LIKE '%images.unsplash.com/photo-1577415124269-fc1140a69e91%'").run("https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&q=80&w=800");
   db.prepare("UPDATE posts SET image_url = ? WHERE image_url LIKE '%images.unsplash.com/photo-1616671285410-9a30488f2441%'").run("https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&q=80&w=800");
