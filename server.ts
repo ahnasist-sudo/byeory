@@ -51,7 +51,7 @@ if (settingsCount.count === 0) {
   insertSetting.run("primary_color", "#FACC15"); // Yellow-400
   insertSetting.run("bg_color", "#000000");
   insertSetting.run("about_text", "사회적협동조합 벼리는 지역사회의 복지 증진과 소외계층 지원을 위해 설립된 사회적협동조합입니다.");
-  insertSetting.run("admin_password", process.env.ADMIN_PASSWORD || "admin");
+  insertSetting.run("admin_password", "1234");
   insertSetting.run("contact_address", "전남 무안군 어딘가");
   insertSetting.run("contact_phone", "02-1234-5678");
   insertSetting.run("contact_email", "contact@byeori.coop");
@@ -60,8 +60,8 @@ if (settingsCount.count === 0) {
   insertSetting.run("social_kakao", "#");
 } else {
   // Ensure admin_password exists (use ENV or default if not set)
-  // Force update to 'admin' as requested by user for immediate effect
-  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("admin_password", process.env.ADMIN_PASSWORD || "admin");
+  // Force update to '1234' as requested by user for immediate effect
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("admin_password", "1234");
   // Update address as requested
   db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").run("contact_address", "전남 무안군 어딘가");
   // Update existing about_text if it has the old value
